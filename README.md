@@ -1,12 +1,10 @@
 # ParallaxCarousel
 🚀 Video
-```
 
+>
+>https://github.com/user-attachments/assets/d0e672e5-5f7f-4dd3-b916-46a048585fb
+>
 
-Uploading Screen Recording 2025-02-12 at 15.38.29.mov…
-
-
-```
 
 ParallaxCarousel
 
