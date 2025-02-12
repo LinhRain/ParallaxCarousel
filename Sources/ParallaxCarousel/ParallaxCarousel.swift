@@ -15,7 +15,7 @@ public struct ParallaxCarousel: View {
     var isShowCardInfor: Bool = true // Điều kiện hiển thị CardInfor
     var itemHeight: CGFloat = 600.0
     var contentMode:ContentMode = .fill
-    
+    var loadMore: () -> Void
     // Hàm khởi tạo có tham số cho các thuộc tính trên
     public init(Images: [ParallaxCarouselModel],
                 axit: Axis.Set = .horizontal,
@@ -24,7 +24,8 @@ public struct ParallaxCarousel: View {
                 titleColor: Color = .white,
                 isShowCardInfor: Bool = true,
                 itemHeight: CGFloat = 600.0,
-                contentMode:ContentMode = .fill
+                contentMode:ContentMode = .fill,
+                loadMore: @escaping () -> Void
     ) {
         self.Images = Images
         self.axit = axit
@@ -34,6 +35,7 @@ public struct ParallaxCarousel: View {
         self.isShowCardInfor = isShowCardInfor
         self.itemHeight = itemHeight
         self.contentMode = contentMode
+        self.loadMore = loadMore
     }
     
     public var body: some View {
@@ -42,15 +44,16 @@ public struct ParallaxCarousel: View {
                 GeometryReader { geometry in
                     let size = geometry.size
                     ScrollView(axit) {
-                        HStack(spacing: 5) {
-                            ForEach(Images) { item in
+                        LazyHStack(spacing: 5) {
+                            ForEach(Images.indices, id: \.self) { index in // Iterate over indices
                                 GeometryReader { proxy in
                                     let itemSize = proxy.size
-                                    // animation 01
+                                    // Animation 01
                                     let minX01 = proxy.frame(in: .scrollView).minX
+                                    // Animation 02
                                     let minX02 = min((proxy.frame(in: .scrollView).minX * 1.4), proxy.size.width * 1.4)
-                                    
-                                    AsyncImage(url: URL(string: item.imageUrl)) { phase in
+
+                                    AsyncImage(url: URL(string: Images[index].imageUrl)) { phase in // Use index to access the correct item
                                         switch phase {
                                         case .success(let image):
                                             image
@@ -63,7 +66,7 @@ public struct ParallaxCarousel: View {
                                                 .shadow(color: .black.opacity(0.25), radius: 8, x: 5, y: 10)
                                                 .overlay {
                                                     if isShowCardInfor {
-                                                        CardInfor(item: item)
+                                                        CardInfor(item: Images[index]) // Use index here as well
                                                     }
                                                 }
                                         case .failure:
@@ -80,14 +83,31 @@ public struct ParallaxCarousel: View {
                                                 .clipShape(RoundedRectangle(cornerRadius: cornerRadiusCard))
                                         }
                                     }
+
+                                    if index == Images.count - 1 { // Now you have the correct index
+                                        Color.clear.onAppear {
+                                            print("LAST ITEM - Index: \(index)") // Print the index
+                                            loadMore()
+                                        }
+                                    }
                                 }
                                 .frame(width: size.width - 80, height: size.height - 40)
+                                .overlay( // Detect when the *last* item appears
+                                    GeometryReader { overlayProxy in
+                                        Color.clear
+                                            .preference(key: LastItemPreferenceKey.self, value: index == Images.count - 1 && overlayProxy.frame(in: .global).maxX > 0) // Check if it's the last item AND visible
+                                    }
+                                )
+                                .onPreferenceChange(LastItemPreferenceKey.self) { isLastItemVisible in
+                                    if isLastItemVisible { // This will now print every time the last item becomes visible
+                                        print("LAST ITEM - Index: \(index)")
+                                    }
+                                }
                                 .scrollTargetLayout()
                                 .scrollTransition(.interactive, axis: .horizontal) { view, phase in
                                     view.scaleEffect(phase.isIdentity ? 1 : 0.95)
                                 }
-                            }
-                        }
+                            }                        }
                         .padding(.horizontal, 30)
                         .frame(height: size.height, alignment: .top)
                     }
@@ -102,14 +122,14 @@ public struct ParallaxCarousel: View {
                 GeometryReader { geometry in
                     let size = geometry.size
                     ScrollView(axit) {
-                        HStack(spacing: 5) {
-                            ForEach(Images) { item in
+                        LazyHStack(spacing: 5) {
+                            ForEach(Images.indices, id: \.self) { index in
                                 GeometryReader { proxy in
                                     let itemSize = proxy.size
                                     let minX = proxy.frame(in: .global).minX
                                     let adjustedX = self.animationType == .type01 ? -minX : -minX * 1.4
                                     
-                                    AsyncImage(url: URL(string: item.imageUrl)) { phase in
+                                    AsyncImage(url: URL(string: Images[index].imageUrl)) { phase in
                                         switch phase {
                                         case .success(let image):
                                             image
@@ -121,7 +141,7 @@ public struct ParallaxCarousel: View {
                                                 .shadow(color: .black.opacity(0.25), radius: 8, x: 5, y: 10)
                                                 .overlay {
                                                     if isShowCardInfor {
-                                                        CardInfor(item: item)
+                                                        CardInfor(item: Images[index])
                                                     }
                                                 }
                                         case .failure:
@@ -140,6 +160,17 @@ public struct ParallaxCarousel: View {
                                     }
                                 }
                                 .frame(width: size.width - 80, height: size.height - 40)
+                                .overlay( // Detect when the *last* item appears
+                                    GeometryReader { overlayProxy in
+                                        Color.clear
+                                            .preference(key: LastItemPreferenceKey.self, value: index == Images.count - 1 && overlayProxy.frame(in: .global).maxX > 0) // Check if it's the last item AND visible
+                                    }
+                                )
+                                .onPreferenceChange(LastItemPreferenceKey.self) { isLastItemVisible in
+                                    if isLastItemVisible { // This will now print every time the last item becomes visible
+                                        print("LAST ITEM - Index: \(index)")
+                                    }
+                                }
                             }
                         }
                         .padding(.horizontal, 30)
@@ -184,15 +215,15 @@ public struct ParallaxCarousel: View {
 }
 
 #Preview {
-    ParallaxCarousel(Images: ParallaxCarouselsSample,itemHeight: 400,contentMode: .fit)
+    ParallaxCarousel(Images: ParallaxCarouselsSample,itemHeight: 400,contentMode: .fit, loadMore: {
+        print("LOAD MORRE")
+    })
 }
 
-extension View {
-    func applyScrollIndicators() -> some View {
-        if #available(iOS 16.0, *) {
-            return self.scrollIndicators(.hidden)
-        } else {
-            return self
-        }
+// PreferenceKey to track the last item's visibility
+struct LastItemPreferenceKey: PreferenceKey {
+    static var defaultValue: Bool = false
+    static func reduce(value: inout Bool, nextValue: () -> Bool) {
+        value = nextValue()
     }
 }
