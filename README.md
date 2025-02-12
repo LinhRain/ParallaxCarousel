@@ -1,4 +1,12 @@
 # ParallaxCarousel
+🚀 Video
+```
+
+
+Uploading Screen Recording 2025-02-12 at 15.38.29.mov…
+
+
+```
 
 ParallaxCarousel
 
