@@ -8,7 +8,7 @@
 import SwiftUI
 
 
-var ParallaxCarouselsSample: [ParallaxCarouselModel] = [
+let ParallaxCarouselsSample: [ParallaxCarouselModel] = [
     .init(imageUrl: "https://picsum.photos/id/1/200/300", title: "Image 01", subTitle: "https://picsum.photos/id/1/200/300"),
     .init(imageUrl: "https://picsum.photos/id/2/200/300", title: "Image 02", subTitle: "https://picsum.photos/id/2/200/300"),
     .init(imageUrl: "https://picsum.photos/id/3/200/300", title: "Image 03", subTitle: "https://picsum.photos/id/3/200/300"),
@@ -35,4 +35,15 @@ public struct ParallaxCarouselModel: Identifiable {
 public enum AnimationType {
     case type01
     case type02
+}
+
+
+extension View {
+    func applyScrollIndicators() -> some View {
+        if #available(iOS 16.0, *) {
+            return self.scrollIndicators(.hidden)
+        } else {
+            return self
+        }
+    }
 }
