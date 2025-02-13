@@ -54,14 +54,14 @@ public struct ParallaxCarousel: View {
                     let size = geometry.size
                     ScrollView(axit) {
                         LazyHStack(spacing: 5) {
-                           
+                            Image(defaultImageURL)
+                                .resizable()
+                                .aspectRatio(contentMode: contentMode)
+                                .frame(width: size.width, height: size.height)
+                                .clipShape(RoundedRectangle(cornerRadius: cornerRadiusCard))
+                                .shadow(color: .black.opacity(0.25), radius: 8, x: 5, y: 10)
+                            
                             ForEach(Images.indices, id: \.self) { index in
-                                Image(defaultImageURL)
-                                    .resizable()
-                                    .aspectRatio(contentMode: contentMode)
-                                    .frame(width: size.width, height: size.height)
-                                    .clipShape(RoundedRectangle(cornerRadius: cornerRadiusCard))
-                                    .shadow(color: .black.opacity(0.25), radius: 8, x: 5, y: 10)
                                 
                                 GeometryReader { proxy in
                                     let itemSize = proxy.size
