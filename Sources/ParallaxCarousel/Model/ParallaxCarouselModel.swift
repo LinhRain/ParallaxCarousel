@@ -17,7 +17,7 @@ let ParallaxCarouselsSample: [ParallaxCarouselModel] = [
 ]
 
 
-public struct ParallaxCarouselModel: Identifiable {
+public struct ParallaxCarouselModel: Identifiable,Equatable {
     public var id: UUID = UUID()
     public var imageUrl: String
     public var title: String
