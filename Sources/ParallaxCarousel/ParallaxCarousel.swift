@@ -17,6 +17,8 @@ public struct ParallaxCarousel: View {
     var itemHeight: CGFloat = 600.0
     var contentMode:ContentMode = .fill
     var loadMore: () -> Void
+    var isDefaultImage:Bool = false
+    var defaultImageURL:String = ""
     
     // Hàm khởi tạo có tham số cho các thuộc tính trên
     public init(
@@ -28,7 +30,9 @@ public struct ParallaxCarousel: View {
         isShowCardInfor: Bool = true,
         itemHeight: CGFloat = 600.0,
         contentMode: ContentMode = .fill,
-        loadMore: @escaping () -> Void
+        loadMore: @escaping () -> Void,
+        isDefaultImage:Bool = false,
+        defaultImageURL:String = "default-image"
     ) {
         self._Images = Images
         self.axit = axit
@@ -39,6 +43,8 @@ public struct ParallaxCarousel: View {
         self.itemHeight = itemHeight
         self.contentMode = contentMode
         self.loadMore = loadMore
+        self.isDefaultImage = isDefaultImage
+        self.defaultImageURL = defaultImageURL
     }
     
     public var body: some View {
@@ -48,7 +54,15 @@ public struct ParallaxCarousel: View {
                     let size = geometry.size
                     ScrollView(axit) {
                         LazyHStack(spacing: 5) {
+                           
                             ForEach(Images.indices, id: \.self) { index in
+                                Image(defaultImageURL)
+                                    .resizable()
+                                    .aspectRatio(contentMode: contentMode)
+                                    .frame(width: size.width, height: size.height)
+                                    .clipShape(RoundedRectangle(cornerRadius: cornerRadiusCard))
+                                    .shadow(color: .black.opacity(0.25), radius: 8, x: 5, y: 10)
+                                
                                 GeometryReader { proxy in
                                     let itemSize = proxy.size
                                     // Animation 01
@@ -193,7 +207,9 @@ public struct ParallaxCarousel: View {
             ParallaxCarousel(
                 Images: $images,
                 itemHeight: 400,
-                loadMore: {}
+                loadMore: {},
+                isDefaultImage: true,
+                defaultImageURL: "default-image"
             )
         }
     }
@@ -209,3 +225,4 @@ struct LastItemPreferenceKey: PreferenceKey {
         value = nextValue()
     }
 }
+
