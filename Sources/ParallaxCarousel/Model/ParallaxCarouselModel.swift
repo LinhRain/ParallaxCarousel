@@ -8,7 +8,7 @@
 import SwiftUI
 
 let ParallaxCarouselsSample: [ParallaxCarouselModel] = [
-    .init(imageUrl: "https://picsum.photos/id/1/200/300", title: "Image 01", subTitle: "https://picsum.photos/id/1/200/300"),
+    .init(imageUrl: "https://deelay.me/5000/https://via.placeholder.com/600x400", title: "Image 01", subTitle: "https://picsum.photos/id/1/200/300"),
     .init(imageUrl: "https://picsum.photos/id/2/200/300", title: "Image 02", subTitle: "https://picsum.photos/id/2/200/300"),
     .init(imageUrl: "https://picsum.photos/id/3/200/300", title: "Image 03", subTitle: "https://picsum.photos/id/3/200/300"),
     .init(imageUrl: "https://picsum.photos/id/4/200/300", title: "Image 04", subTitle: "https://picsum.photos/id/4/200/300"),
