@@ -59,7 +59,7 @@ struct ContentView: View {
     
     var body: some View {
         ParallaxCarousel(
-            Images: items,
+            images: items,
             itemHeight: 400,
             contentMode: .fit,
             onLoadMore: loadMore
@@ -72,7 +72,7 @@ struct ContentView: View {
 
 | Thuộc tính | Kiểu Dữ Liệu    | Mô Tả    |
 | :-----: | :---: | :---: |
-| Images | [ParallaxCarouselModel] | Danh sách các item hiển thị trong carousel | 
+| images | [ParallaxCarouselModel] | Danh sách các item hiển thị trong carousel | 
 | axit | Axis.Set | Hướng hiển thị (.horiroltal hoặc .vertical) | 
 | animationType | AnimationType | Kiểu animation (.type01 or.type02) | 
 | cornerRadiusCard | CGFloat |Bo góc thẻ | 
@@ -81,6 +81,7 @@ struct ContentView: View {
 | itemHeight | CGFloat | Chiều cao item | 
 | contentMode | ContentMode | Kiểu hiển thị ảnh (.fill or .fit) | 
 | onLoadMore | () -> Void | Hàm gọi khi cần load thêm dữ liệu | 
+| onParallaxItemClick | (index) -> Void | Callback khi click vào item với index tương ứng trong parallax carousel | 
 
 📜 Giấy phép
 
