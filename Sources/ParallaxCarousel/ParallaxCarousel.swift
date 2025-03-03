@@ -78,7 +78,7 @@ public struct ParallaxCarousel: View {
                         ScrollView(axit) {
                             LazyHStack(spacing: 15) {
                                 if isDefaultImage {
-                                    Image(systemName: "gear")
+                                    Image(defaultImageURL)
                                         .resizable()
                                         .aspectRatio(contentMode: contentMode)
                                         .frame(width: size.width, height: size.height)
