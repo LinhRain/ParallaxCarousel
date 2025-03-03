@@ -10,6 +10,8 @@ import SDWebImageSwiftUI
 public struct ParallaxCarousel: View {
     /// Danh sách hình ảnh hiển thị trong carousel
     @Binding var images: [ParallaxCarouselModel]
+    @State private var currentIndex: Int = 0
+    @State private var scrollOffset: CGFloat = 0
     var axit: Axis.Set = .horizontal
     var animationType: AnimationType = .type01
     var cornerRadiusCard: CGFloat = 15.0
@@ -21,6 +23,9 @@ public struct ParallaxCarousel: View {
     var isDefaultImage:Bool = false
     var defaultImageURL:String = ""
     var onParallaxItemClick:(_ index:Int) -> Void
+    @State private var scrollViewProxy: ScrollViewProxy?
+    @Namespace private var animation
+    @State private var isLoading: Bool = false
     
     /// Hiển thị danh sách ảnh trong một Carousel.
     /// - Parameters:
@@ -66,142 +71,180 @@ public struct ParallaxCarousel: View {
     
     public var body: some View {
         if #available(iOS 17.0, *) {
-            VStack {
-                GeometryReader { geometry in
-                    let size = geometry.size
-                    ScrollView(axit) {
-                        LazyHStack(spacing: 5) {
-                            Image(defaultImageURL)
-                                .resizable()
-                                .aspectRatio(contentMode: contentMode)
-                                .frame(width: size.width, height: size.height)
-                                .clipShape(RoundedRectangle(cornerRadius: cornerRadiusCard))
-                                .shadow(color: .black.opacity(0.25), radius: 8, x: 5, y: 10)
-                            
-                            ForEach(images.indices, id: \.self) { index in
+            VStack(spacing: 20) {
+                ScrollViewReader { proxy in
+                    GeometryReader { geometry in
+                        let size = geometry.size
+                        ScrollView(axit) {
+                            LazyHStack(spacing: 15) {
+                                if isDefaultImage {
+                                    Image(defaultImageURL)
+                                        .resizable()
+                                        .aspectRatio(contentMode: contentMode)
+                                        .frame(width: size.width - 80, height: size.height - 40)
+                                        .clipShape(RoundedRectangle(cornerRadius: cornerRadiusCard))
+                                        .shadow(color: .black.opacity(0.25), radius: 8, x: 5, y: 10)
+                                }
                                 
-                                GeometryReader { proxy in
-                                    let itemSize = proxy.size
-                                    // Animation 01
-                                    let minX01 = proxy.frame(in: .scrollView).minX
-                                    // Animation 02
-                                    let minX02 = min((proxy.frame(in: .scrollView).minX * 1.6), proxy.size.width * 1.6)
-                                    
-                                    WebImage(url: URL(string: images[index].imageUrl)) { image in
-                                        image.resizable()
-                                    } placeholder: {
-                                        ZStack {
-                                            Color.gray.opacity(0.1)
-                                            ProgressView()
-                                                .progressViewStyle(CircularProgressViewStyle())
+                                ForEach(images.indices, id: \.self) { index in
+                                    GeometryReader { proxy in
+                                        let itemSize = proxy.size
+                                        let minX01 = proxy.frame(in: .scrollView).minX
+                                        let minX02 = min((proxy.frame(in: .scrollView).minX * 1.6), proxy.size.width * 1.6)
+                                        
+                                        WebImage(url: URL(string: images[index].imageUrl)) { image in
+                                            image.resizable()
+                                        } placeholder: {
+                                            ZStack {
+                                                Color.gray.opacity(0.1)
+                                                ProgressView()
+                                                    .progressViewStyle(CircularProgressViewStyle())
+                                            }
+                                        }
+                                        .indicator(.activity)
+                                        .aspectRatio(contentMode: contentMode)
+                                        .offset(x: self.animationType == .type01 ? -minX01 : -minX02)
+                                        .frame(width: itemSize.width, height: itemSize.height)
+                                        .clipShape(RoundedRectangle(cornerRadius: cornerRadiusCard))
+                                        .shadow(color: .black.opacity(0.25), radius: 8, x: 5, y: 10)
+                                        .overlay {
+                                            if isShowCardInfor {
+                                                CardInfor(item: images[index])
+                                            }
+                                        }
+                                        .onTapGesture(perform: {
+                                            onParallaxItemClick(index)
+                                        })
+                                        .onChange(of: proxy.frame(in: .scrollView).minX) { newValue in
+                                            let midX = proxy.frame(in: .global).midX
+                                            let screenMidX = UIScreen.main.bounds.width / 2
+                                            
+                                            if abs(midX - screenMidX) < 50 {
+                                                withAnimation(.easeInOut(duration: 0.2)) {
+                                                    currentIndex = index
+                                                }
+                                            }
+                                            
+                                            if index == images.count - 1 && !isLoading {
+                                                let screenWidth = UIScreen.main.bounds.width
+                                                let endThreshold = screenWidth * 0.2
+                                                
+                                                if midX < screenWidth + endThreshold {
+                                                    isLoading = true
+                                                    loadMore()
+                                                }
+                                            }
                                         }
                                     }
-                                    .indicator(.activity)
-                                    .aspectRatio(contentMode: contentMode)
-                                    .offset(x: self.animationType == .type01 ? -minX01 : -minX02)
-                                    .frame(width: itemSize.width, height: itemSize.height)
-                                    .clipShape(RoundedRectangle(cornerRadius: cornerRadiusCard))
-                                    .shadow(color: .black.opacity(0.25), radius: 8, x: 5, y: 10)
-                                    .overlay {
-                                        if isShowCardInfor {
-                                            CardInfor(item: images[index])
-                                        }
-                                    }
-                                    .onTapGesture(perform: {
-                                        onParallaxItemClick(index)
-                                    })
-                                    
-                                    if index == images.count - 1 {
-                                        Color.clear.onAppear {
-                                            print("LAST ITEM - Index: \(index)")
-                                            loadMore()
-                                        }
-                                    }
-                                    
+                                    .frame(width: size.width - 80, height: size.height - 40)
                                 }
-                                .frame(width: size.width - 80, height: size.height - 40)
-                                .overlay( // Detect when the *last* item appears
-                                    GeometryReader { overlayProxy in
-                                        Color.clear
-                                            .preference(key: LastItemPreferenceKey.self, value: index == images.count - 1 && overlayProxy.frame(in: .global).maxX > 0) // Check if it's the last item AND visible
-                                    }
-                                )
-                                .onPreferenceChange(LastItemPreferenceKey.self) { isLastItemVisible in
-                                    if isLastItemVisible { // This will now print every time the last item becomes visible
-                                        print("LAST ITEM - Index: \(index)")
-                                    }
-                                }
-                                .scrollTargetLayout()
-                                .scrollTransition(.interactive, axis: .horizontal) { view, phase in
-                                    view.scaleEffect(phase.isIdentity ? 1 : 0.95)
-                                }
-                            }                        }
-                        .padding(.horizontal, 30)
-                        .frame(height: size.height, alignment: .top)
+                            }
+                            .padding(.horizontal, 40)
+                            .frame(height: size.height, alignment: .top)
+                        }
+                        .scrollIndicators(.hidden)
+                        .onAppear {
+                            scrollViewProxy = proxy
+                        }
                     }
-                    .scrollIndicators(.hidden)
+                    .frame(height: itemHeight)
                 }
-                .frame(height: itemHeight)
-                .padding(.horizontal, -15)
+                
+                HStack(spacing: 8) {
+                    ForEach(0..<images.count, id: \.self) { index in
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(currentIndex == index ? Color.blue : Color.gray)
+                            .frame(width: currentIndex == index ? 20 : 12, height: 4)
+                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentIndex)
+                            .id(index)
+                            .onTapGesture {
+                                scrollToItem(index: index)
+                            }
+                    }
+                }
+                .padding(.bottom, 10)
             }
         } else {
             // Fallback on earlier versions (iOS 15 and above)
-            VStack {
-                GeometryReader { geometry in
-                    let size = geometry.size
-                    ScrollView(axit) {
-                        LazyHStack(spacing: 5) {
-                            ForEach(images.indices, id: \.self) { index in
-                                GeometryReader { proxy in
-                                    let itemSize = proxy.size
-                                    let minX = proxy.frame(in: .global).minX
-                                    let adjustedX = self.animationType == .type01 ? -minX : -minX * 1.4
-                                    
-                                    WebImage(url: URL(string: images[index].imageUrl)) { image in
-                                        image.resizable()
-                                    } placeholder: {
-                                        ZStack {
-                                            Color.gray.opacity(0.1) // Nền xám khi ảnh đang load
-                                            ProgressView()
-                                                .progressViewStyle(CircularProgressViewStyle()) // Vòng quay ở giữa
+            VStack(spacing: 20) {
+                ScrollViewReader { proxy in
+                    GeometryReader { geometry in
+                        let size = geometry.size
+                        ScrollView(axit) {
+                            LazyHStack(spacing: 5) {
+                                ForEach(images.indices, id: \.self) { index in
+                                    GeometryReader { proxy in
+                                        let itemSize = proxy.size
+                                        let minX = proxy.frame(in: .global).minX
+                                        let adjustedX = self.animationType == .type01 ? -minX : -minX * 1.4
+                                        
+                                        WebImage(url: URL(string: images[index].imageUrl)) { image in
+                                            image.resizable()
+                                        } placeholder: {
+                                            ZStack {
+                                                Color.gray.opacity(0.1) // Nền xám khi ảnh đang load
+                                                ProgressView()
+                                                    .progressViewStyle(CircularProgressViewStyle()) // Vòng quay ở giữa
+                                            }
+                                        }
+                                        .indicator(.activity)
+                                        .aspectRatio(contentMode: contentMode)
+                                        .frame(width: itemSize.width, height: itemSize.height)
+                                        .offset(x:adjustedX)
+                                        .clipShape(RoundedRectangle(cornerRadius: cornerRadiusCard))
+                                        .shadow(color: .black.opacity(0.25), radius: 8, x: 5, y: 10)
+                                        .overlay {
+                                            if isShowCardInfor {
+                                                CardInfor(item: images[index])
+                                            }
+                                        }
+                                        .onTapGesture(perform: {
+                                            onParallaxItemClick(index)
+                                        })
+                                        .onChange(of: proxy.frame(in: .global).minX) { newValue in
+                                            scrollOffset = newValue
+                                            updateCurrentIndex(from: proxy)
                                         }
                                     }
-                                    .indicator(.activity)
-                                    .aspectRatio(contentMode: contentMode)
-                                    .frame(width: itemSize.width, height: itemSize.height)
-                                    .offset(x:adjustedX)
-                                    .clipShape(RoundedRectangle(cornerRadius: cornerRadiusCard))
-                                    .shadow(color: .black.opacity(0.25), radius: 8, x: 5, y: 10)
-                                    .overlay {
-                                        if isShowCardInfor {
-                                            CardInfor(item: images[index])
+                                    .frame(width: size.width - 80, height: size.height - 40)
+                                    .overlay( // Detect when the *last* item appears
+                                        GeometryReader { overlayProxy in
+                                            Color.clear
+                                                .preference(key: LastItemPreferenceKey.self, value: index == images.count - 1 && overlayProxy.frame(in: .global).maxX > 0)
                                         }
-                                    }
-                                    .onTapGesture(perform: {
-                                        onParallaxItemClick(index)
-                                    })
-                                }
-                                .frame(width: size.width - 80, height: size.height - 40)
-                                .overlay( // Detect when the *last* item appears
-                                    GeometryReader { overlayProxy in
-                                        Color.clear
-                                            .preference(key: LastItemPreferenceKey.self, value: index == images.count - 1 && overlayProxy.frame(in: .global).maxX > 0)
-                                    }
-                                )
-                                .onPreferenceChange(LastItemPreferenceKey.self) { isLastItemVisible in
-                                    if isLastItemVisible {
-                                        print("LAST ITEM - Index: \(index)")
+                                    )
+                                    .onPreferenceChange(LastItemPreferenceKey.self) { isLastItemVisible in
+                                        if isLastItemVisible {
+                                            print("LAST ITEM - Index: \(index)")
+                                        }
                                     }
                                 }
                             }
+                            .padding(.horizontal, 30)
+                            .frame(height: size.height, alignment: .top)
                         }
-                        .padding(.horizontal, 30)
-                        .frame(height: size.height, alignment: .top)
+                        .applyScrollIndicators()
+                        .onAppear {
+                            scrollViewProxy = proxy
+                        }
                     }
-                    .applyScrollIndicators()
+                    .frame(height: itemHeight)
+                    .padding(.horizontal, -15)
                 }
-                .frame(height: itemHeight)
-                .padding(.horizontal, -15)
+                
+                HStack(spacing: 8) {
+                    ForEach(0..<images.count, id: \.self) { index in
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(currentIndex == index ? Color.blue : Color.gray)
+                            .frame(width: currentIndex == index ? 20 : 12, height: 4)
+                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentIndex)
+                            .id(index)
+                            .onTapGesture {
+                                scrollToItem(index: index)
+                            }
+                    }
+                }
+                .padding(.bottom, 10)
             }
         }
     }
@@ -234,6 +277,30 @@ public struct ParallaxCarousel: View {
         })
         .cornerRadius(cornerRadiusCard)
     }
+    
+    private func updateCurrentIndex(from proxy: GeometryProxy) {
+        let midX = proxy.frame(in: .global).midX
+        let screenWidth = UIScreen.main.bounds.width
+        let screenMidX = screenWidth / 2
+        let itemWidth = screenWidth - 80 // Chiều rộng của mỗi item
+        
+        // Tính toán index dựa trên vị trí scroll
+        let estimatedIndex = Int(round((screenMidX - midX) / itemWidth))
+        
+        // Đảm bảo index nằm trong khoảng hợp lệ
+        if estimatedIndex >= 0 && estimatedIndex < images.count {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                currentIndex = estimatedIndex
+            }
+        }
+    }
+    
+    private func scrollToItem(index: Int) {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            currentIndex = index
+            scrollViewProxy?.scrollTo(index, anchor: .center)
+        }
+    }
 }
 
 #Preview {
@@ -245,6 +312,7 @@ public struct ParallaxCarousel: View {
                 images: $images,
                 itemHeight: 400,
                 loadMore: {
+                    print("loadnore")
                 },
                 isDefaultImage: true,
                 defaultImageURL: "default-image",
@@ -264,6 +332,14 @@ public struct ParallaxCarousel: View {
 struct LastItemPreferenceKey: PreferenceKey {
     static var defaultValue: Bool = false
     static func reduce(value: inout Bool, nextValue: () -> Bool) {
+        value = nextValue()
+    }
+}
+
+// Thêm PreferenceKey để theo dõi scroll offset
+struct ScrollOffsetPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = nextValue()
     }
 }
