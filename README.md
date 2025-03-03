@@ -168,7 +168,7 @@ Nếu bạn có bất kỳ câu hỏi hoặc góp ý nào, vui lòng:
 
 - Mở issue trên GitHub
 - Gửi pull request
-- Liên hệ qua email: [your.email@example.com]
+- Liên hệ qua email: [linhnd.rain@gmail.com]
 
 ## ⭐️ Nếu bạn thích thư viện này
 
