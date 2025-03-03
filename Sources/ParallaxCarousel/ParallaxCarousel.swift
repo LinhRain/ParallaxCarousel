@@ -78,10 +78,10 @@ public struct ParallaxCarousel: View {
                         ScrollView(axit) {
                             LazyHStack(spacing: 15) {
                                 if isDefaultImage {
-                                    Image(defaultImageURL)
+                                    Image(systemName: "gear")
                                         .resizable()
                                         .aspectRatio(contentMode: contentMode)
-                                        .frame(width: size.width - 80, height: size.height - 40)
+                                        .frame(width: size.width, height: size.height)
                                         .clipShape(RoundedRectangle(cornerRadius: cornerRadiusCard))
                                         .shadow(color: .black.opacity(0.25), radius: 8, x: 5, y: 10)
                                 }
@@ -136,7 +136,7 @@ public struct ParallaxCarousel: View {
                                             }
                                         }
                                     }
-                                    .frame(width: size.width - 80, height: size.height - 40)
+                                    .frame(width: size.width - 10, height: size.height - 20)
                                 }
                             }
                             .padding(.horizontal, 40)
@@ -206,7 +206,7 @@ public struct ParallaxCarousel: View {
                                             updateCurrentIndex(from: proxy)
                                         }
                                     }
-                                    .frame(width: size.width - 80, height: size.height - 40)
+                                    .frame(width: size.width - 10, height: size.height - 20)
                                     .overlay( // Detect when the *last* item appears
                                         GeometryReader { overlayProxy in
                                             Color.clear
