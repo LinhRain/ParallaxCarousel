@@ -80,7 +80,7 @@ public struct ParallaxCarousel: View {
                                 if isDefaultImage {
                                     Image(defaultImageURL)
                                         .resizable()
-                                        .aspectRatio(contentMode: contentMode)
+                                        .aspectRatio(contentMode: .fit)
                                         .frame(width: size.width, height: size.height)
                                         .clipShape(RoundedRectangle(cornerRadius: cornerRadiusCard))
                                         .shadow(color: .black.opacity(0.25), radius: 8, x: 5, y: 10)
